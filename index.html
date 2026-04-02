@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Training Needs Assessment — Jaideep Rayapudi</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1916; --ink2: #5a5850; --ink3: #9a9890;
+  --surface: #f7f5f0; --card: #fff;
+  --border: rgba(26,25,22,0.1); --border2: rgba(26,25,22,0.2);
+  --accent: #2a5a8c; --accent-light: #eef4fb;
+  --green: #1D7a55; --green-light: #eaf7f2;
+  --r: 12px;
+}
+body {
+  font-family: 'Georgia','Times New Roman',serif;
+  background: var(--surface); color: var(--ink);
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 2.5rem 1rem 5rem;
+}
+.app { width: 100%; max-width: 600px; }
+
+.header { text-align: center; margin-bottom: 2.5rem; }
+.logo { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .15em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.25rem; }
+.headline { font-size: 28px; font-weight: 400; letter-spacing: -.03em; line-height: 1.25; margin-bottom: .6rem; }
+.subline { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 14px; color: var(--ink3); line-height: 1.6; max-width: 440px; margin: 0 auto; }
+
+.prog-wrap { margin-bottom: 1.75rem; }
+.prog-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.prog-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink3); }
+.prog-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 2rem; animation: fadeUp .3s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+.q-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; font-weight: 500; color: var(--ink3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .5rem; }
+.q-text { font-size: 19px; font-weight: 400; color: var(--ink); letter-spacing: -.02em; line-height: 1.4; margin-bottom: .4rem; }
+.q-hint { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink3); margin-bottom: 1.5rem; line-height: 1.5; }
+
+/* Options */
+.opts { display: flex; flex-direction: column; gap: 9px; }
+.opt {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 15px; border: 1px solid var(--border);
+  border-radius: 10px; cursor: pointer; transition: all .15s;
+  font-family: 'Helvetica Neue',Arial,sans-serif;
+}
+.opt:hover { border-color: var(--accent); background: var(--accent-light); }
+.opt.sel { border-color: var(--accent); background: var(--accent-light); }
+.opt-check {
+  width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px; transition: all .15s; background: white;
+}
+.opt.sel .opt-check { background: var(--accent); border-color: var(--accent); }
+.opt-check-inner { width: 8px; height: 8px; background: white; border-radius: 1px; opacity: 0; transition: opacity .15s; }
+.opt.sel .opt-check-inner { opacity: 1; }
+.opt-radio { border-radius: 50%; }
+.opt.sel .opt-radio { background: var(--accent); border-color: var(--accent); }
+.opt-radio-inner { width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0; transition: opacity .15s; }
+.opt.sel .opt-radio-inner { opacity: 1; }
+.opt-text { font-size: 14px; color: var(--ink); line-height: 1.4; }
+.opt-sub { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+/* Grid opts */
+.opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt-card {
+  padding: 13px 14px; border: 1px solid var(--border); border-radius: 10px;
+  cursor: pointer; transition: all .15s; font-family: 'Helvetica Neue',Arial,sans-serif;
+}
+.opt-card:hover { border-color: var(--accent); background: var(--accent-light); }
+.opt-card.sel { border-color: var(--accent); background: var(--accent-light); }
+.opt-card-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.opt-card-sub { font-size: 11px; color: var(--ink3); margin-top: 3px; line-height: 1.4; }
+
+/* Text input */
+.text-input {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 14px; color: var(--ink);
+  background: var(--surface); outline: none; transition: border .2s;
+  resize: none; line-height: 1.6;
+}
+.text-input:focus { border-color: var(--accent); background: white; }
+
+/* Nav */
+.nav { display: flex; gap: 10px; margin-top: 1.5rem; align-items: center; }
+.btn-next {
+  flex: 1; height: 48px; background: var(--ink); color: white; border: none;
+  border-radius: 10px; font-family: 'Helvetica Neue',Arial,sans-serif;
+  font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity .2s;
+  opacity: .35; pointer-events: none;
+}
+.btn-next.on { opacity: 1; pointer-events: all; }
+.btn-next.on:hover { opacity: .85; }
+.btn-back {
+  height: 48px; padding: 0 16px; background: none; border: 1px solid var(--border);
+  border-radius: 10px; font-family: 'Helvetica Neue',Arial,sans-serif;
+  font-size: 13px; color: var(--ink3); cursor: pointer; transition: all .2s;
+}
+.btn-back:hover { color: var(--ink); border-color: var(--ink3); }
+.multi-hint { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink3); margin-top: 8px; }
+
+/* Intro */
+.intro-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 1.25rem 0 1.5rem; }
+.itile { background: var(--surface); border-radius: 10px; padding: 13px; }
+.itile-n { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink3); margin-bottom: 3px; }
+.itile-v { font-size: 13px; color: var(--ink); }
+.btn-start { width: 100%; height: 50px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity .2s; }
+.btn-start:hover { opacity: .88; }
+.field { margin-bottom: 1rem; }
+.field:last-child { margin-bottom: 0; }
+.field label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; font-weight: 500; color: var(--ink2); margin-bottom: 5px; display: block; }
+.field input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 14px; color: var(--ink); background: var(--surface); outline: none; transition: border .2s; }
+.field input:focus { border-color: var(--accent); background: white; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.err { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: #a33020; margin-top: 6px; display: none; }
+
+/* Summary */
+.summary { animation: fadeUp .4s ease; }
+.sum-hero { text-align: center; padding: 1rem 0 1.5rem; }
+.sum-badge { display: inline-block; background: var(--green-light); color: var(--green); padding: 6px 18px; border-radius: 99px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1rem; }
+.sum-title { font-size: 22px; font-weight: 400; letter-spacing: -.03em; margin-bottom: .4rem; }
+.sum-sub { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink3); line-height: 1.6; }
+.sum-section { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; font-weight: 500; color: var(--ink3); letter-spacing: .08em; text-transform: uppercase; margin: 1.5rem 0 .75rem; }
+.sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: .5rem; }
+.sum-tile { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+.sum-tile-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink3); margin-bottom: 3px; }
+.sum-tile-val { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink); font-weight: 500; }
+.sum-open { background: var(--surface); border-radius: 10px; padding: 13px 14px; margin-bottom: 8px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.sum-open-label { font-size: 11px; color: var(--ink3); margin-bottom: 4px; }
+.divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+.btn-download { width: 100%; height: 50px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 10px; transition: opacity .2s; }
+.btn-download:hover { opacity: .88; }
+.email-box { background: var(--accent-light); border: 1px solid rgba(42,90,140,.15); border-radius: 10px; padding: 14px 16px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--accent); line-height: 1.6; margin-bottom: 10px; }
+.email-box strong { font-weight: 500; }
+.btn-restart { width: 100%; height: 44px; background: none; border: 1px solid var(--border); border-radius: 10px; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink3); cursor: pointer; transition: all .2s; }
+.btn-restart:hover { color: var(--ink); border-color: var(--ink3); }
+.disclaimer { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink3); text-align: center; margin-top: 2rem; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">Jaideep Rayapudi · AI Training</div>
+    <h1 class="headline">Tell us what your<br>team actually needs</h1>
+    <p class="subline">10 questions. 5 minutes. A brief we can use to design the right program — not a generic one.</p>
+  </div>
+  <div class="prog-wrap" id="prog-wrap" style="display:none">
+    <div class="prog-row">
+      <span class="prog-label" id="prog-label">Question 1 of 10</span>
+      <span class="prog-label" id="prog-pct">0%</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div id="main"></div>
+</div>
+
+<script>
+const state = {
+  screen: 'intro',
+  step: 0,
+  contact: { name: '', role: '', org: '', email: '' },
+  answers: {}
+};
+
+const STEPS = [
+  {
+    id: 'specialisation',
+    label: 'About your team',
+    q: 'What is the primary area of specialisation of the people who will attend?',
+    hint: 'This shapes the examples, cases, and tools we focus on.',
+    type: 'single',
+    opts: [
+      { v: 'Clinical — doctors and specialists', s: 'Physicians, surgeons, consultants' },
+      { v: 'Nursing and allied health', s: 'Nurses, physios, lab, radiology staff' },
+      { v: 'Hospital administration', s: 'Operations, HR, finance, quality teams' },
+      { v: 'Medical education', s: 'Faculty, academic administrators, trainers' },
+      { v: 'Public health and policy', s: 'Program managers, health officials' },
+      { v: 'Mixed — multiple groups', s: 'Cross-functional audience' }
+    ]
+  },
+  {
+    id: 'audience_size',
+    label: 'About your team',
+    q: 'How many people are you thinking of including in this program?',
+    hint: 'Affects delivery format, interaction design, and pricing.',
+    type: 'single',
+    opts: [
+      { v: 'Up to 15', s: 'Small cohort — high interaction' },
+      { v: '15 – 30', s: 'Workshop size' },
+      { v: '30 – 75', s: 'Departmental or institutional' },
+      { v: '75 – 150', s: 'Large group — conference style' },
+      { v: 'More than 150', s: 'Institutional rollout' }
+    ]
+  },
+  {
+    id: 'prior_exposure',
+    label: 'Current baseline',
+    q: 'What best describes where your audience currently stands with AI?',
+    hint: 'Be honest — there are no wrong answers here, only different starting points.',
+    type: 'single',
+    opts: [
+      { v: 'Complete beginners — most have never used an AI tool', s: '' },
+      { v: 'Aware but passive — heard a lot, tried very little', s: 'The majority position in most healthcare organisations' },
+      { v: 'Some experimenters — a few have played with ChatGPT etc.', s: '' },
+      { v: 'Actively using — a meaningful number use AI informally already', s: '' },
+      { v: 'Mixed — ranges from novice to early adopter', s: '' }
+    ]
+  },
+  {
+    id: 'problems',
+    label: 'What you want to solve',
+    q: 'Which of these best describe the problems you are hoping AI training will address?',
+    hint: 'Select all that apply.',
+    type: 'multi',
+    opts: [
+      { v: 'Clinical documentation takes too much time', s: '' },
+      { v: 'Staff are anxious or resistant about AI', s: 'You want to address fear with understanding' },
+      { v: 'Leadership wants a credible AI strategy', s: 'Top-down readiness' },
+      { v: 'Patient communication and education', s: '' },
+      { v: 'Research, literature review, and synthesis', s: '' },
+      { v: 'Operational efficiency and administration', s: '' },
+      { v: 'Staying current with AI in our specialty', s: '' },
+      { v: 'We are not sure yet — we need help mapping this', s: '' }
+    ]
+  },
+  {
+    id: 'depth',
+    label: 'Depth and ambition',
+    q: 'How deep do you want the program to go?',
+    hint: 'Choose the level that feels honest, not aspirational.',
+    type: 'grid',
+    opts: [
+      { v: 'Awareness', s: 'What AI is, what it can do in healthcare, how to think about it. No tools, no hands-on.' },
+      { v: 'Practical literacy', s: 'Understanding plus guided hands-on with 2–3 core tools relevant to your work.' },
+      { v: 'Workflow integration', s: 'Learning to embed AI into specific daily tasks and clinical or admin workflows.' },
+      { v: 'Strategic readiness', s: 'For leaders: building an institutional AI strategy, governance, and change plan.' }
+    ]
+  },
+  {
+    id: 'time',
+    label: 'Time available',
+    q: 'How much time is your team realistically able to give to this program?',
+    hint: 'Not the ideal — the realistic. We design around what you can commit to.',
+    type: 'grid',
+    opts: [
+      { v: 'Half day', s: '3–4 hours. One session, high density.' },
+      { v: 'Full day', s: '6–7 hours. Breathing room for practice.' },
+      { v: 'Two days', s: 'Our most complete format.' },
+      { v: 'Short series', s: '3–5 sessions of 1–2 hours each, spread over weeks.' },
+      { v: 'Longer program', s: '4+ weeks. Sustained learning with practice in between.' }
+    ]
+  },
+  {
+    id: 'format',
+    label: 'Delivery format',
+    q: 'What is your preferred delivery format?',
+    hint: 'Both are fully supported. Hybrid is possible but needs more planning.',
+    type: 'grid',
+    opts: [
+      { v: 'In-person', s: 'On-site at your institution. Higher engagement, logistics required.' },
+      { v: 'Online (live)', s: 'Real-time virtual. Flexible, no travel.' },
+      { v: 'Hybrid', s: 'Some in-room, some online. We can design for this.' },
+      { v: 'Not decided yet', s: 'Open to recommendation.' }
+    ]
+  },
+  {
+    id: 'certification',
+    label: 'Certification',
+    q: 'Does your organisation want or need a certificate of completion for participants?',
+    hint: 'Affects program design, documentation, and pricing.',
+    type: 'single',
+    opts: [
+      { v: 'Yes — it is important to us', s: 'CME credit, institutional certificate, or similar' },
+      { v: 'Nice to have but not essential', s: '' },
+      { v: 'Not important for this program', s: '' },
+      { v: 'Not sure yet', s: '' }
+    ]
+  },
+  {
+    id: 'funding',
+    label: 'Budget and authority',
+    q: 'How is this program likely to be funded, and who has the budget authority?',
+    hint: 'Helps us structure the proposal correctly.',
+    type: 'single',
+    opts: [
+      { v: 'Institutional budget — I can approve or recommend', s: '' },
+      { v: 'Institutional budget — needs sign-off from leadership', s: '' },
+      { v: 'Departmental or training budget', s: '' },
+      { v: 'Individual or self-funded participants', s: '' },
+      { v: 'Not yet determined', s: '' }
+    ]
+  },
+  {
+    id: 'open',
+    label: 'In your own words',
+    q: 'What is the one thing you most want participants to walk away being able to do — that they cannot do today?',
+    hint: 'There is no right answer. A sentence or two is enough.',
+    type: 'text',
+    placeholder: 'e.g. Use an AI tool confidently in their daily work without being afraid of getting it wrong...'
+  }
+];
+
+function render() {
+  const el = document.getElementById('main');
+  const pw = document.getElementById('prog-wrap');
+  if (state.screen === 'intro') { pw.style.display = 'none'; el.innerHTML = intro(); }
+  else if (state.screen === 'q') { pw.style.display = 'block'; el.innerHTML = question(); updateProg(); }
+  else { pw.style.display = 'none'; el.innerHTML = summary(); }
+}
+
+function intro() {
+  return `<div class="card">
+    <div class="q-label">Before we begin</div>
+    <p style="font-size:15px;color:var(--ink2);font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.7;margin-bottom:1.25rem">Every organisation is at a different starting point. This brief takes 5 minutes and gives us what we need to design something that fits your team — not a standard deck we've used elsewhere.</p>
+    <div class="intro-tiles">
+      <div class="itile"><div class="itile-n">Questions</div><div class="itile-v">10 structured</div></div>
+      <div class="itile"><div class="itile-n">Time</div><div class="itile-v">~5 minutes</div></div>
+      <div class="itile"><div class="itile-n">Output</div><div class="itile-v">Brief to email us</div></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Your name</label><input type="text" id="c-name" placeholder="Dr. Priya Sharma" value="${state.contact.name}"></div>
+      <div class="field"><label>Your role</label><input type="text" id="c-role" placeholder="Dean / HOD / Director" value="${state.contact.role}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Organisation</label><input type="text" id="c-org" placeholder="Apollo Hospitals, Chennai" value="${state.contact.org}"></div>
+      <div class="field"><label>Email address</label><input type="text" id="c-email" placeholder="you@hospital.org" value="${state.contact.email}"></div>
+    </div>
+    <p class="err" id="intro-err">Please fill in your name and organisation before continuing.</p>
+    <button class="btn-start" onclick="startQ()" style="margin-top:1rem">Start the assessment →</button>
+  </div>`;
+}
+
+function startQ() {
+  const name = document.getElementById('c-name').value.trim();
+  const org = document.getElementById('c-org').value.trim();
+  if (!name || !org) { document.getElementById('intro-err').style.display = 'block'; return; }
+  state.contact.name = name;
+  state.contact.role = document.getElementById('c-role').value.trim();
+  state.contact.org = org;
+  state.contact.email = document.getElementById('c-email').value.trim();
+  state.screen = 'q'; state.step = 0;
+  render();
+}
+
+function question() {
+  const s = STEPS[state.step];
+  const ans = state.answers[s.id];
+
+  let optHTML = '';
+  if (s.type === 'single') {
+    optHTML = `<div class="opts">${s.opts.map((o, i) => `
+      <div class="opt ${ans === o.v ? 'sel' : ''}" onclick="setSingle('${s.id}','${o.v.replace(/'/g,"\\'")}')">
+        <div class="opt-check opt-radio"><div class="opt-check-inner opt-radio-inner"></div></div>
+        <div><div class="opt-text">${o.v}</div>${o.s ? `<div class="opt-sub">${o.s}</div>` : ''}</div>
+      </div>`).join('')}</div>`;
+  } else if (s.type === 'multi') {
+    const selArr = ans || [];
+    optHTML = `<div class="opts">${s.opts.map(o => `
+      <div class="opt ${selArr.includes(o.v) ? 'sel' : ''}" onclick="toggleMulti('${s.id}','${o.v.replace(/'/g,"\\'")}')">
+        <div class="opt-check"><div class="opt-check-inner"></div></div>
+        <div><div class="opt-text">${o.v}</div>${o.s ? `<div class="opt-sub">${o.s}</div>` : ''}</div>
+      </div>`).join('')}</div>
+    <div class="multi-hint">Select all that apply — then press Next</div>`;
+  } else if (s.type === 'grid') {
+    const selVal = ans || '';
+    optHTML = `<div class="opts-grid">${s.opts.map(o => `
+      <div class="opt-card ${selVal === o.v ? 'sel' : ''}" onclick="setSingle('${s.id}','${o.v.replace(/'/g,"\\'")}')">
+        <div class="opt-card-title">${o.v}</div>
+        <div class="opt-card-sub">${o.s}</div>
+      </div>`).join('')}</div>`;
+  } else if (s.type === 'text') {
+    optHTML = `<textarea class="text-input" id="text-ans" rows="4" placeholder="${s.placeholder}" oninput="setTextAns('${s.id}')">${ans || ''}</textarea>`;
+  }
+
+  const ready = isReady(s.id);
+
+  return `<div class="card">
+    <div class="q-label">Question ${state.step + 1} of ${STEPS.length} · ${s.label}</div>
+    <div class="q-text">${s.q}</div>
+    <div class="q-hint">${s.hint}</div>
+    ${optHTML}
+    <div class="nav">
+      ${state.step > 0 ? `<button class="btn-back" onclick="goBack()">←</button>` : ''}
+      <button class="btn-next ${ready ? 'on' : ''}" id="btn-next" onclick="goNext()">
+        ${state.step < STEPS.length - 1 ? 'Next →' : 'Review my answers →'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function isReady(id) {
+  const s = STEPS.find(x => x.id === id);
+  const ans = state.answers[id];
+  if (s.type === 'single' || s.type === 'grid') return !!ans;
+  if (s.type === 'multi') return ans && ans.length > 0;
+  if (s.type === 'text') return ans && ans.trim().length > 5;
+  return false;
+}
+
+function setSingle(id, val) {
+  state.answers[id] = val;
+  const s = STEPS.find(x => x.id === id);
+  if (s.type === 'grid') {
+    setTimeout(() => goNext(), 240);
+  }
+  render();
+}
+
+function toggleMulti(id, val) {
+  if (!state.answers[id]) state.answers[id] = [];
+  const arr = state.answers[id];
+  const idx = arr.indexOf(val);
+  if (idx > -1) arr.splice(idx, 1); else arr.push(val);
+  state.answers[id] = [...arr];
+  render();
+}
+
+function setTextAns(id) {
+  state.answers[id] = document.getElementById('text-ans').value;
+  const btn = document.getElementById('btn-next');
+  if (btn) btn.className = 'btn-next' + (isReady(id) ? ' on' : '');
+}
+
+function goNext() {
+  if (!isReady(STEPS[state.step].id)) return;
+  if (state.step < STEPS.length - 1) { state.step++; render(); }
+  else { state.screen = 'summary'; render(); }
+}
+
+function goBack() {
+  if (state.step > 0) { state.step--; render(); }
+  else { state.screen = 'intro'; render(); }
+}
+
+function updateProg() {
+  const pct = Math.round((state.step / STEPS.length) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = `Question ${state.step + 1} of ${STEPS.length}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+
+function getLabel(id) {
+  return STEPS.find(s => s.id === id)?.q || id;
+}
+
+function summary() {
+  const a = state.answers;
+  const c = state.contact;
+  const problems = Array.isArray(a.problems) ? a.problems.join(', ') : '—';
+
+  return `<div class="summary">
+    <div class="card" style="margin-bottom:1rem">
+      <div class="sum-hero">
+        <div class="sum-badge">Brief ready</div>
+        <div class="sum-title">Thank you, ${c.name.split(' ')[0]}.</div>
+        <div class="sum-sub">Download the brief below and email it to <strong>jaideep@jdrayapudi.com</strong>. We will respond with a tailored proposal within 48 hours.</div>
+      </div>
+
+      <div class="sum-section">Organisation</div>
+      <div class="sum-grid">
+        <div class="sum-tile"><div class="sum-tile-label">Name</div><div class="sum-tile-val">${c.name}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Role</div><div class="sum-tile-val">${c.role || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Organisation</div><div class="sum-tile-val">${c.org}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Email</div><div class="sum-tile-val">${c.email || '—'}</div></div>
+      </div>
+
+      <div class="sum-section">Program brief</div>
+      <div class="sum-grid">
+        <div class="sum-tile"><div class="sum-tile-label">Specialisation</div><div class="sum-tile-val">${a.specialisation || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Audience size</div><div class="sum-tile-val">${a.audience_size || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Current AI baseline</div><div class="sum-tile-val">${a.prior_exposure || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Depth</div><div class="sum-tile-val">${a.depth || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Time available</div><div class="sum-tile-val">${a.time || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Format</div><div class="sum-tile-val">${a.format || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Certification</div><div class="sum-tile-val">${a.certification || '—'}</div></div>
+        <div class="sum-tile"><div class="sum-tile-label">Funding</div><div class="sum-tile-val">${a.funding || '—'}</div></div>
+      </div>
+
+      <div class="sum-section">Problems to solve</div>
+      <div class="sum-open"><div class="sum-open-label">Selected areas</div>${problems}</div>
+
+      <div class="sum-section">In their own words</div>
+      <div class="sum-open"><div class="sum-open-label">What they want participants to walk away able to do</div>${a.open || '—'}</div>
+
+      <div class="divider"></div>
+
+      <button class="btn-download" onclick="downloadMD()">Download brief as Markdown →</button>
+      <div class="email-box">
+        Email the downloaded file to <strong>jaideep@jdrayapudi.com</strong> — or forward it to whoever is coordinating the program. We will respond within 48 hours with a structured proposal.
+      </div>
+      <button class="btn-restart" onclick="restart()">Start a new assessment</button>
+    </div>
+    <p class="disclaimer">Your answers are used only to design a training proposal. No data is stored or shared.</p>
+  </div>`;
+}
+
+function buildMarkdown() {
+  const a = state.answers;
+  const c = state.contact;
+  const d = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const problems = Array.isArray(a.problems) ? a.problems.map(p => `- ${p}`).join('\n') : '— Not specified';
+
+  return `# AI Training Needs Brief
+**Submitted:** ${d}
+
+---
+
+## Contact details
+
+| Field | Response |
+|-------|----------|
+| Name | ${c.name} |
+| Role | ${c.role || '—'} |
+| Organisation | ${c.org} |
+| Email | ${c.email || '—'} |
+
+---
+
+## Program requirements
+
+| Dimension | Response |
+|-----------|----------|
+| Specialisation / audience | ${a.specialisation || '—'} |
+| Number of participants | ${a.audience_size || '—'} |
+| Current AI baseline | ${a.prior_exposure || '—'} |
+| Desired depth | ${a.depth || '—'} |
+| Time available | ${a.time || '—'} |
+| Delivery format | ${a.format || '—'} |
+| Certification needed | ${a.certification || '—'} |
+| Funding and budget authority | ${a.funding || '—'} |
+
+---
+
+## Problems to solve
+
+${problems}
+
+---
+
+## In their own words
+
+> ${a.open || '—'}
+
+---
+
+*Generated via the AI Training Needs Assessment at jaideeprayapudi-lab.github.io*`;
+}
+
+function downloadMD() {
+  const md = buildMarkdown();
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `AI-training-brief-${state.contact.org.replace(/\s+/g,'-').toLowerCase()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restart() {
+  state.screen = 'intro'; state.step = 0; state.answers = {};
+  state.contact = { name: '', role: '', org: '', email: '' };
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
